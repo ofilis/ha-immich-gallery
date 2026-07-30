@@ -7,6 +7,8 @@ and the project uses semantic versioning.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-07-30
+
 ### Changed
 
 - Whole-library and favorite sources now require explicit selection instead
@@ -38,4 +40,5 @@ and the project uses semantic versioning.
   with documented upstream source, hash, and trademark exclusion; no banner
   or wide wordmark is included.
 
-[Unreleased]: https://github.com/ofilis/ha-immich-gallery/commits/main
+[Unreleased]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/ofilis/ha-immich-gallery/releases/tag/v0.1.0
