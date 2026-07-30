@@ -90,6 +90,23 @@ custom-repository method below.
 6. Go to **Settings → Devices & services → Add integration**.
 7. Select **Immich Gallery**.
 
+## Updates and release notes
+
+Immich Gallery publishes full GitHub Releases for stable versions. HACS reads
+the body of each GitHub Release and displays it as the update announcement, so
+users can review changes before installing an update.
+
+Every release keeps these values aligned:
+
+- the version in `custom_components/immich_gallery/manifest.json`;
+- the version section in `CHANGELOG.md`;
+- the curated release announcement under `docs/releases/`;
+- the GitHub tag and full GitHub Release.
+
+A tag without a published GitHub Release is not treated as a stable Immich
+Gallery release. See [docs/RELEASING.md](docs/RELEASING.md) for the maintainer
+checklist.
+
 ## Initial setup
 
 Enter the root address of the Immich instance and the dedicated API key.
@@ -269,6 +286,14 @@ runtime request to an external branding service.
 
 See [BRANDING.md](BRANDING.md) for the exact upstream source, hash, attribution,
 and the non-affiliation notice.
+
+> [!NOTE]
+> HACS 2.0.5 still requests custom-integration icons from the legacy public
+> brand CDN in its repository list and update entity. This can show an
+> **Icon not available** placeholder even though Home Assistant correctly
+> renders the bundled local icon. This is an upstream HACS limitation tracked
+> in [hacs/integration#5223](https://github.com/hacs/integration/issues/5223)
+> and [hacs/integration#5388](https://github.com/hacs/integration/pull/5388).
 
 ## Migration from older custom integrations
 

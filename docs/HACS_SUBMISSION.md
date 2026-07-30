@@ -82,9 +82,13 @@ After validation succeeds:
 
 1. Confirm `manifest.json` contains the release version.
 2. Update `CHANGELOG.md`.
-3. Create and push a version tag such as `v0.1.0`.
-4. Publish a full GitHub Release from that tag.
-5. Confirm HACS can install that release as a custom repository.
+3. Add a curated announcement under `docs/releases/`.
+4. Follow the exact checks and command sequence in
+   [`docs/RELEASING.md`](RELEASING.md).
+5. Create and push a version tag such as `v0.1.0`.
+6. Publish a full GitHub Release from that tag using the curated announcement.
+7. Confirm HACS shows the announcement and can install the release as a custom
+   repository.
 
 A tag without a GitHub Release is not sufficient for default-library
 submission.
