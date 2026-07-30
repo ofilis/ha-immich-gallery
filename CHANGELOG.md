@@ -7,6 +7,25 @@ and the project uses semantic versioning.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-30
+
+### Changed
+
+- Remove the unused optional loading dependency on Home Assistant's built-in
+  `immich` integration. Immich Gallery remains an independent integration and
+  continues to communicate directly with the configured Immich API.
+- Document the HACS 2.0.5 local-brand display limitation, the separate
+  repository-list and update-entity fixes being developed upstream, and the
+  exact default-library submission process.
+- Clarify that HACS does not require README screenshots for integrations and
+  that no banner or personal library image will be published.
+
+### Added
+
+- Regression tests for the one-integration repository structure, required HACS
+  and Home Assistant metadata, local icon PNG dimensions, and validation
+  workflow configuration.
+
 ## [0.1.0] - 2026-07-30
 
 ### Changed
@@ -40,5 +59,6 @@ and the project uses semantic versioning.
   with documented upstream source, hash, and trademark exclusion; no banner
   or wide wordmark is included.
 
-[Unreleased]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ofilis/ha-immich-gallery/releases/tag/v0.1.0

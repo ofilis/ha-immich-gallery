@@ -293,7 +293,14 @@ and the non-affiliation notice.
 > **Icon not available** placeholder even though Home Assistant correctly
 > renders the bundled local icon. This is an upstream HACS limitation tracked
 > in [hacs/integration#5223](https://github.com/hacs/integration/issues/5223)
-> and [hacs/integration#5388](https://github.com/hacs/integration/pull/5388).
+> and [hacs/integration#5402](https://github.com/hacs/integration/issues/5402).
+> The repository-list work is tracked in the paired
+> [hacs/integration#5388](https://github.com/hacs/integration/pull/5388) and
+> [hacs/frontend#945](https://github.com/hacs/frontend/pull/945) changes; the
+> update entity requires a separate upstream change.
+> It does not block default-library admission because that validation accepts
+> the bundled local `brand` directory. See the
+> [complete icon analysis](docs/HACS_ICON.md).
 
 ## Migration from older custom integrations
 
@@ -307,8 +314,15 @@ automations after installation.
 
 ## HACS default-library status
 
-The repository is structured for HACS and Hassfest validation. The complete
-submission sequence and maintainer checklist are documented in
+The repository meets the published integration requirements and has passing
+HACS and Hassfest validation, local brand assets, and a full GitHub Release.
+The remaining external step is an owner-submitted pull request adding
+`ofilis/ha-immich-gallery` to the `hacs/default` integration list.
+
+No banner, personal image, or README screenshot is needed: HACS applies its
+README image check only to plugins and themes, not integrations. The exact
+verified evidence, release-order rule, alphabetic insertion point, and current
+pull-request template are documented in
 [docs/HACS_SUBMISSION.md](docs/HACS_SUBMISSION.md).
 
 HACS notes that new default-repository reviews can take months. During that

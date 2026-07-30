@@ -35,9 +35,11 @@ sponsored by, or endorsed by the Immich project, FUTO, Home Assistant, the
 Open Home Foundation, or HACS. Do not use the integration icon in a way that
 implies official endorsement.
 
-The Immich FAQ says integrations for other platforms are typically approved
-when proper notification is given. The maintainer should notify Immich before
-the first public release and follow any brand-use direction received:
+The Immich FAQ discusses notification for integrations under its commercial
+guidelines and recommends direct contact for edge-case trademark use. This
+repository is a non-commercial, independent compatibility project with a
+prominent non-affiliation notice and limited icon use. Any future commercial
+use or broader marketing use should first be discussed with Immich:
 [Immich FAQ](https://docs.immich.app/FAQ/).
 
 ## Included files
