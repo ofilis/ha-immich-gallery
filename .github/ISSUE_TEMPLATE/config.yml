@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/ofilis/ha-immich-gallery/security/advisories/new
+    about: Report credentials, private data exposure, or another security issue privately.

@@ -1,0 +1,110 @@
+{
+  "title": "Immich Gallery",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Immich",
+        "description": "Create a dedicated API key with only user.read, album.read, asset.read, and asset.view.",
+        "data": {
+          "url": "Immich URL",
+          "api_key": "API key",
+          "verify_ssl": "Verify TLS certificate"
+        },
+        "data_description": {
+          "url": "HTTPS, local HTTP, Tailscale IP, and MagicDNS hostnames are supported. A trailing /api is accepted.",
+          "api_key": "The key is sent only in the x-api-key header.",
+          "verify_ssl": "Keep enabled unless the server deliberately uses a trusted private certificate."
+        }
+      },
+      "sources": {
+        "title": "Choose image sources",
+        "description": "Each enabled source creates one image entity.",
+        "data": {
+          "include_library": "Random image from the whole library",
+          "include_favorites": "Random image from favorites",
+          "album_ids": "Albums",
+          "repeat_window": "Recently shown images to avoid",
+          "refresh_interval": "Refresh interval"
+        },
+        "data_description": {
+          "repeat_window": "Remember this many images per source to reduce repeats. Use 0 to disable.",
+          "refresh_interval": "Minutes between image changes."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Update the Immich API key",
+        "description": "Use a key for the same Immich user with only user.read, album.read, asset.read, and asset.view.",
+        "data": {
+          "api_key": "New API key"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure the Immich server",
+        "description": "Change the server address or TLS verification without replacing the API key.",
+        "data": {
+          "url": "Immich URL",
+          "verify_ssl": "Verify TLS certificate"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the Immich server.",
+      "invalid_auth": "The API key is invalid or revoked.",
+      "invalid_response": "The server did not return a supported Immich API response.",
+      "invalid_url": "Enter a valid HTTP or HTTPS URL without credentials, a query, or a fragment.",
+      "missing_permission": "The API key is missing one or more required read-only permissions.",
+      "no_sources": "Select at least one image source.",
+      "wrong_account": "The new host or API key belongs to a different Immich user.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This Immich user is already configured.",
+      "reauth_successful": "The API key was updated successfully.",
+      "reconfigure_successful": "The Immich server settings were updated successfully."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Immich Gallery",
+        "description": "Update the host, rotate the API key, select image sources, and control image rotation.",
+        "data": {
+          "url": "Immich host",
+          "api_key": "New API key (optional)",
+          "verify_ssl": "Verify TLS certificate",
+          "include_library": "Random image from the whole library",
+          "include_favorites": "Random image from favorites",
+          "album_ids": "Albums",
+          "repeat_window": "Recently shown images to avoid",
+          "refresh_interval": "Refresh interval"
+        },
+        "data_description": {
+          "url": "HTTPS, local HTTP, Tailscale IP, and MagicDNS hostnames are supported. A trailing /api is accepted.",
+          "api_key": "Leave blank to keep the current key.",
+          "verify_ssl": "Keep enabled for HTTPS unless the server deliberately uses a trusted private or self-signed certificate.",
+          "repeat_window": "Remember this many images per source to reduce repeats. Use 0 to disable.",
+          "refresh_interval": "Minutes between image changes."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the Immich server.",
+      "invalid_auth": "The API key is invalid or revoked.",
+      "invalid_response": "The server did not return a supported Immich API response.",
+      "missing_permission": "The API key is missing one or more required read-only permissions.",
+      "no_sources": "Select at least one image source.",
+      "wrong_account": "The new host or API key belongs to a different Immich user.",
+      "unknown": "Unexpected error."
+    }
+  },
+  "entity": {
+    "image": {
+      "random_library": {
+        "name": "Random library"
+      },
+      "random_favorites": {
+        "name": "Random favorites"
+      }
+    }
+  }
+}

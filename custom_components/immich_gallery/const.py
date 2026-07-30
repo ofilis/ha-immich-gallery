@@ -1,0 +1,37 @@
+"""Constants for the Immich Gallery integration."""
+
+from datetime import timedelta
+
+DOMAIN = "immich_gallery"
+
+CONF_ALBUM_IDS = "album_ids"
+CONF_INCLUDE_FAVORITES = "include_favorites"
+CONF_INCLUDE_LIBRARY = "include_library"
+CONF_REPEAT_WINDOW = "repeat_window"
+CONF_REFRESH_INTERVAL = "refresh_interval"
+
+DEFAULT_INCLUDE_FAVORITES = True
+DEFAULT_INCLUDE_LIBRARY = True
+DEFAULT_REPEAT_WINDOW = 20
+DEFAULT_REFRESH_INTERVAL = 5
+DEFAULT_VERIFY_SSL = True
+
+MIN_REFRESH_INTERVAL = 1
+MAX_REFRESH_INTERVAL = 60
+MIN_REPEAT_WINDOW = 0
+MAX_REPEAT_WINDOW = 100
+
+API_TIMEOUT = 20
+IMAGE_TIMEOUT = 30
+MAX_IMAGE_BYTES = 20 * 1024 * 1024
+MIN_RANDOM_CANDIDATES = 10
+MAX_RANDOM_CANDIDATES = 100
+
+DEFAULT_UPDATE_INTERVAL = timedelta(minutes=DEFAULT_REFRESH_INTERVAL)
+
+REQUIRED_PERMISSIONS = (
+    "user.read",
+    "album.read",
+    "asset.read",
+    "asset.view",
+)

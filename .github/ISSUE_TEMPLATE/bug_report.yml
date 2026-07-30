@@ -1,0 +1,64 @@
+name: Bug report
+description: Report a reproducible Immich Gallery problem without private data.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never include an API key, private hostname or IP, album/asset ID,
+        filename, EXIF data, personal image, or unredacted diagnostics.
+  - type: input
+    id: home_assistant_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2026.7.4"
+    validations:
+      required: true
+  - type: input
+    id: immich_version
+    attributes:
+      label: Immich version
+      placeholder: "3.0.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: connection_type
+    attributes:
+      label: Connection type
+      options:
+        - HTTPS hostname
+        - Local HTTP hostname or IP
+        - Tailscale IP or MagicDNS
+        - Reverse-proxy subpath
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe what happened and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Redacted logs
+      render: text
+      description: Remove every credential, host, IP, personal identifier, and media detail.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I removed all credentials, private network details, personal identifiers, and media.
+          required: true
+        - label: I tested the latest released version.
+          required: true

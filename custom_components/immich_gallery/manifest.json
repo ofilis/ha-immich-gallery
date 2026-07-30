@@ -1,0 +1,12 @@
+{
+  "domain": "immich_gallery",
+  "name": "Immich Gallery",
+  "after_dependencies": ["immich"],
+  "codeowners": ["@ofilis"],
+  "config_flow": true,
+  "documentation": "https://github.com/ofilis/ha-immich-gallery",
+  "integration_type": "service",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/ofilis/ha-immich-gallery/issues",
+  "version": "0.1.0"
+}

@@ -1,0 +1,26 @@
+name: Feature request
+description: Suggest a focused read-only gallery improvement.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: Explain the user need without sharing private media or identifiers.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: permissions
+    attributes:
+      label: Permission impact
+      options:
+        - label: This request can remain read-only and does not require upload, update, delete, or administration permissions.
+          required: true
