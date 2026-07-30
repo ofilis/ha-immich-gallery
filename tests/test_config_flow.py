@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from homeassistant.const import CONF_API_KEY, CONF_URL, CONF_VERIFY_SSL
 
-from custom_components.immich_gallery.config_flow import _settings_schema
+from custom_components.immich_gallery.config_flow import (
+    _settings_schema,
+    _source_schema,
+)
 from custom_components.immich_gallery.const import (
     CONF_ALBUM_IDS,
     CONF_INCLUDE_FAVORITES,
@@ -15,6 +18,19 @@ from custom_components.immich_gallery.const import (
 from custom_components.immich_gallery.models import Album
 
 ALBUM_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+
+
+def test_new_sources_require_explicit_selection() -> None:
+    """No broad image source is enabled without an explicit user choice."""
+    schema = _source_schema((Album(album_id=ALBUM_ID, name="Family"),))
+
+    result = schema({})
+
+    assert result[CONF_INCLUDE_LIBRARY] is False
+    assert result[CONF_INCLUDE_FAVORITES] is False
+    assert result[CONF_ALBUM_IDS] == []
+    assert result[CONF_REPEAT_WINDOW] == 20
+    assert result[CONF_REFRESH_INTERVAL] == 5
 
 
 def test_configure_schema_allows_connection_and_rotation_changes() -> None:

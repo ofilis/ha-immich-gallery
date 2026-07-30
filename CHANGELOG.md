@@ -7,6 +7,19 @@ and the project uses semantic versioning.
 
 ## [Unreleased]
 
+### Changed
+
+- Whole-library and favorite sources now require explicit selection instead
+  of being enabled by default.
+- The repeat-window field now explains that recent images are remembered
+  separately for each source.
+- Project documentation and the integration interface are English-only.
+
+### Fixed
+
+- Remove obsolete image entity-registry entries when their sources are
+  deselected, preventing stale unavailable entities after reconfiguration.
+
 ### Added
 
 - Initial Home Assistant config flow and image entities.
@@ -19,8 +32,8 @@ and the project uses semantic versioning.
   per-source recent-history filtering, duplicate removal, and least-recent
   fallback.
 - Bounded Immich preview downloads with AVIF, GIF, JPEG, PNG, and WebP output.
-- Privacy-preserving diagnostics, English and Turkish translations, local
-  branding, HACS/Hassfest validation, and automated tests.
+- Privacy-preserving diagnostics, English localization, local branding,
+  HACS/Hassfest validation, and automated tests.
 - Small official Immich flower assets for HACS/Home Assistant identification,
   with documented upstream source, hash, and trademark exclusion; no banner
   or wide wordmark is included.

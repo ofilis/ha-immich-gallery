@@ -23,12 +23,12 @@
           "include_library": "Random image from the whole library",
           "include_favorites": "Random image from favorites",
           "album_ids": "Albums",
-          "repeat_window": "Recently shown images to avoid",
+          "repeat_window": "Recent images remembered per source",
           "refresh_interval": "Refresh interval"
         },
         "data_description": {
-          "repeat_window": "Remember this many images per source to reduce repeats. Use 0 to disable.",
-          "refresh_interval": "Minutes between image changes."
+          "repeat_window": "Prevents this many recently shown images for each source from being selected again when alternatives are available. Use 0 to disable.",
+          "refresh_interval": "Minutes between image changes. Enter a value from 1 to 60."
         }
       },
       "reauth_confirm": {
@@ -75,15 +75,15 @@
           "include_library": "Random image from the whole library",
           "include_favorites": "Random image from favorites",
           "album_ids": "Albums",
-          "repeat_window": "Recently shown images to avoid",
+          "repeat_window": "Recent images remembered per source",
           "refresh_interval": "Refresh interval"
         },
         "data_description": {
           "url": "HTTPS, local HTTP, Tailscale IP, and MagicDNS hostnames are supported. A trailing /api is accepted.",
           "api_key": "Leave blank to keep the current key.",
           "verify_ssl": "Keep enabled for HTTPS unless the server deliberately uses a trusted private or self-signed certificate.",
-          "repeat_window": "Remember this many images per source to reduce repeats. Use 0 to disable.",
-          "refresh_interval": "Minutes between image changes."
+          "repeat_window": "Prevents this many recently shown images for each source from being selected again when alternatives are available. Use 0 to disable.",
+          "refresh_interval": "Minutes between image changes. Enter a value from 1 to 60."
         }
       }
     },

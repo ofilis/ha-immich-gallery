@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from homeassistant.components.image import ImageEntity
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -19,10 +21,33 @@ async def async_setup_entry(
 ) -> None:
     """Set up one image entity per configured gallery source."""
     coordinator = entry.runtime_data
+    _remove_stale_entities(hass, entry, coordinator.sources)
     async_add_entities(
         ImmichGalleryImage(hass, entry, coordinator, source)
         for source in coordinator.sources
     )
+
+
+@callback
+def _remove_stale_entities(
+    hass: HomeAssistant,
+    entry: ImmichGalleryConfigEntry,
+    sources: tuple[GallerySource, ...],
+) -> None:
+    """Remove image entities for sources no longer selected by the user."""
+    active_unique_ids = {f"{entry.unique_id}:{source.key}" for source in sources}
+    registry = er.async_get(hass)
+
+    for registry_entry in er.async_entries_for_config_entry(
+        registry,
+        entry.entry_id,
+    ):
+        if (
+            registry_entry.domain == Platform.IMAGE
+            and registry_entry.platform == DOMAIN
+            and registry_entry.unique_id not in active_unique_ids
+        ):
+            registry.async_remove(registry_entry.entity_id)
 
 
 class ImmichGalleryImage(ImageEntity):

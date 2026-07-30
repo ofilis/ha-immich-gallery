@@ -45,7 +45,7 @@ Home Assistant instance without shadowing each other.
 - Immich-generated previews instead of original-file downloads
 - HEIC, HEIF, RAW, TIFF, and other source formats when Immich can generate a
   browser-safe preview
-- UI setup, reauthentication, reconfiguration, English, and Turkish
+- English-only UI setup, reauthentication, and reconfiguration
 - No telemetry, cloud relay, analytics, or third-party runtime service
 
 ## Requirements
@@ -119,6 +119,11 @@ After validation, select at least one source:
 - favorites;
 - one or more albums.
 
+No image source is enabled by default. This prevents broad library or favorite
+entities from being created unless the user explicitly selects them. Removing
+a source later also removes its obsolete entity-registry entry, so it does not
+remain listed as unavailable.
+
 Each enabled source creates its own `image` entity.
 
 ## Changing the configuration later
@@ -168,6 +173,11 @@ For every source and rotation:
 This remains scalable for very large libraries because at most 100 metadata
 rows are requested per source. It also behaves sensibly for small albums by
 cycling toward the least recently seen item.
+
+The default recent-history window is 20 images per source. With the default
+five-minute refresh interval, that represents roughly 100 minutes of recent
+display history when enough distinct images are available. A value of `0`
+disables repeat avoidance.
 
 Recent asset IDs exist only in runtime memory. They are not written to Home
 Assistant state, diagnostics, logs, or this repository, and the history resets
