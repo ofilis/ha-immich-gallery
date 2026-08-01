@@ -7,6 +7,13 @@ and the project uses semantic versioning.
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-08-02
+
+### Fixed
+
+- Export the repository logo and bundled Home Assistant/HACS icons as RGBA PNGs,
+  removing both the exterior background and every neutral-white separator.
+
 ## [0.1.2] - 2026-08-02
 
 ### Changed
@@ -69,7 +76,8 @@ and the project uses semantic versioning.
   with documented upstream source, hash, and trademark exclusion; no banner
   or wide wordmark is included.
 
-[Unreleased]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ofilis/ha-immich-gallery/releases/tag/v0.1.0
