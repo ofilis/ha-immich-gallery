@@ -20,7 +20,9 @@ owners. References to them describe compatibility and project purpose.
 
 ## Included files
 
-The repository uses one logo with the PNG sizes required by each surface:
+The repository uses one logo with transparent RGBA PNG sizes required by each
+surface. Only the colored logo artwork remains visible; exterior and internal
+neutral-white areas are transparent.
 
 - `assets/logo.png`: README header artwork
 - `assets/icon-256.png`: 256 × 256 icon source

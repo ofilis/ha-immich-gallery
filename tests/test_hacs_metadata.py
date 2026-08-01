@@ -31,6 +31,15 @@ def _png_dimensions(path: Path) -> tuple[int, int]:
     return struct.unpack(">II", content[16:24])
 
 
+def _png_color_type(path: Path) -> int:
+    """Return the PNG color type from the IHDR chunk."""
+    content = path.read_bytes()
+
+    assert content.startswith(PNG_SIGNATURE)
+    assert content[12:16] == b"IHDR"
+    return content[25]
+
+
 def test_repository_contains_one_integration() -> None:
     """HACS integration repositories must contain exactly one component."""
     integrations = sorted(
@@ -64,6 +73,8 @@ def test_local_brand_icons_have_required_png_dimensions() -> None:
 
     assert _png_dimensions(brand / "icon.png") == (256, 256)
     assert _png_dimensions(brand / "icon@2x.png") == (512, 512)
+    assert _png_color_type(brand / "icon.png") == 6
+    assert _png_color_type(brand / "icon@2x.png") == 6
     assert (brand / "icon.png").read_bytes() == (ASSETS / "icon-256.png").read_bytes()
     assert (brand / "icon@2x.png").read_bytes() == (
         ASSETS / "icon-512.png"
@@ -80,6 +91,7 @@ def test_project_logo_assets_have_expected_dimensions() -> None:
 
     for filename, dimensions in expected_pngs.items():
         assert _png_dimensions(ASSETS / filename) == dimensions
+        assert _png_color_type(ASSETS / filename) == 6
 
 
 def test_validation_workflow_has_hacs_and_hassfest_without_ignores() -> None:
