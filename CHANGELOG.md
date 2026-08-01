@@ -7,6 +7,16 @@ and the project uses semantic versioning.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-02
+
+### Changed
+
+- Use the selected Immich Gallery house-and-landscape logo consistently in the
+  README, HACS, and Home Assistant.
+- Rewrite the README around installation, setup, dashboard use, configuration,
+  privacy, and security while removing maintainer-only implementation detail.
+- Use the project owner's GitHub handle in the MIT copyright notice.
+
 ## [0.1.1] - 2026-07-30
 
 ### Changed
@@ -59,6 +69,7 @@ and the project uses semantic versioning.
   with documented upstream source, hash, and trademark exclusion; no banner
   or wide wordmark is included.
 
-[Unreleased]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ofilis/ha-immich-gallery/releases/tag/v0.1.0

@@ -61,10 +61,9 @@ also accept this directory and only fall back to the legacy
 `home-assistant/brands` repository when it is absent.
 
 No README screenshot is required for an integration. HACS applies its README
-image check only to plugins and themes. Immich Gallery therefore does not add
-a banner, library screenshot, personal photo, or other marketing image. Only
-the small local integration icons required for service identification are
-included.
+image check only to plugins and themes. Immich Gallery includes only its project
+logo in the README, with no library screenshot, personal photo, or private
+media. HACS uses the local integration icons for service identification.
 
 HACS 2.0.5 can still show an icon placeholder in its own repository list and
 update dialog because those views do not yet consume Home Assistant's local

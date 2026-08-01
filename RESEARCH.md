@@ -193,16 +193,14 @@ Immich source code is distributed under AGPL-3.0:
 That software license does not automatically grant trademark rights to the
 Immich name or logo.
 
-Immich's official [FAQ](https://docs.immich.app/FAQ/) limits uses that might
-imply affiliation or endorsement while generally allowing integrations with
-appropriate disclosure. The official
-[Unraid installation guide](https://docs.immich.app/install/unraid/) directly
-references the square Immich logo for visual identification.
+Immich Gallery therefore uses a project-specific house-aperture mark. Five
+curved sections retain the recognizable Immich color order while forming a
+house around a simplified landscape image. It does not use Home Assistant's
+official three-node network symbol.
 
-The unmodified square Immich flower is therefore used only in the small local
-HACS and Home Assistant technical icon assets. No Immich banner, screenshot,
-wide wordmark, or marketing image is used in the GitHub README. Asset origin,
-hashes, ownership, and license exclusion are documented in `BRANDING.md`.
+The design combines recognizable compatibility cues and is not presented as an
+official mark of either project. Asset details and the factual non-affiliation
+notice are documented in `BRANDING.md`.
 
 Immich Gallery clearly states that it is an independent community integration
 and is not affiliated with, sponsored by, or endorsed by Immich, FUTO, Home
