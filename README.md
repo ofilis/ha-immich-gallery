@@ -1,230 +1,105 @@
 <p align="center">
-  A privacy-first Home Assistant integration for rotating images from your
-  self-hosted Immich library.
+  <img src="assets/logo.png" width="180" alt="Immich Gallery logo">
 </p>
 
-<p align="center">
-  <a href="https://github.com/ofilis/ha-immich-gallery/actions/workflows/validate.yml">
-    <img src="https://github.com/ofilis/ha-immich-gallery/actions/workflows/validate.yml/badge.svg" alt="HACS and Hassfest validation">
-  </a>
-  <a href="https://github.com/ofilis/ha-immich-gallery/actions/workflows/tests.yml">
-    <img src="https://github.com/ofilis/ha-immich-gallery/actions/workflows/tests.yml/badge.svg" alt="Tests">
-  </a>
-  <a href="LICENSE">
-    <img src="https://img.shields.io/github/license/ofilis/ha-immich-gallery" alt="MIT license">
-  </a>
-</p>
+<div align="center">
 
 # Immich Gallery
 
-Immich Gallery creates rotating Home Assistant `image` entities from an Immich
-library. It supports the entire library, favorites, and any number of selected
-albums.
+**Bring your self-hosted Immich photos into Home Assistant.**
 
-It complements Home Assistant's built-in
-[Immich integration](https://www.home-assistant.io/integrations/immich/).
-The unique domain `immich_gallery` means both integrations can run in the same
-Home Assistant instance without shadowing each other.
+Display a rotating photo from your entire library, favorites, or selected albums —
+with no cloud relay or third-party service.
 
-> [!IMPORTANT]
-> Immich Gallery is an independent community project. It is not affiliated
-> with, sponsored by, or endorsed by Immich, FUTO, Home Assistant, the Open
-> Home Foundation, or HACS.
+[![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
+[![Home Assistant 2026.4+](https://img.shields.io/badge/Home%20Assistant-2026.4%2B-18BCF2.svg)](https://www.home-assistant.io/)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## Highlights
+</div>
 
-- Random image from the entire Immich library
-- Random image from favorites
-- One separate image entity for every selected album
-- Configurable rotation interval from 1 to 60 minutes
-- Per-source recent-image memory to reduce visible repeats
-- Host, API-key rotation, TLS, albums, randomization, and timing editable later
-  through the integration's **Configure** button
-- HTTPS, local HTTP, reverse-proxy paths, Tailscale IP addresses, and Tailscale
-  MagicDNS hostnames
-- Immich-generated previews instead of original-file downloads
-- HEIC, HEIF, RAW, TIFF, and other source formats when Immich can generate a
-  browser-safe preview
-- English-only UI setup, reauthentication, and reconfiguration
-- No telemetry, cloud relay, analytics, or third-party runtime service
+## What is Immich Gallery?
+
+Immich Gallery creates Home Assistant image entities from your Immich library.
+Each enabled source gets its own entity and changes automatically at the interval
+you choose.
+
+You can display:
+
+- a random image from your entire library;
+- a random favorite;
+- a separate rotating image for each selected album.
+
+Add the entities to any Home Assistant dashboard using the built-in Picture Entity
+card. Immich Gallery can be installed alongside Home Assistant's built-in Immich
+integration.
+
+## Features
+
+- Server-side random selection that remains efficient with large libraries
+- Repeat avoidance for recently displayed images
+- Rotation interval from 1 to 60 minutes
+- Album, favorites, and whole-library sources
+- Settings that can be changed later without reinstalling
+- HTTPS, local HTTP, reverse proxies, and Tailscale addresses
+- Immich-generated previews for HEIC, HEIF, RAW, TIFF, and other supported formats
+- No telemetry, analytics, cloud relay, or external runtime service
 
 ## Requirements
 
 - Home Assistant 2026.4 or newer
 - HACS
 - A reachable Immich server
-- A dedicated Immich API key with only:
-
+- An Immich API key with these permissions:
   - `user.read`
   - `album.read`
   - `asset.read`
   - `asset.view`
 
-Do not grant `all`, upload, update, delete, administration, or
-`asset.download` permissions.
+A dedicated read-only API key is recommended. Upload, update, delete,
+administration, and `asset.download` permissions are not required.
 
 ## Installation
 
-### From the default HACS library
+### 1. Download from HACS
 
-This will become the preferred route after the repository is accepted:
+[![Open your Home Assistant instance and open Immich Gallery in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=ofilis&repository=ha-immich-gallery&category=integration)
 
-1. Open **HACS**.
-2. Search for **Immich Gallery**.
-3. Select **Download**.
-4. Restart Home Assistant when HACS requests it.
-5. Go to **Settings → Devices & services → Add integration**.
-6. Select **Immich Gallery**.
+Alternatively, open HACS, search for **Immich Gallery**, select **Download**, and
+restart Home Assistant when requested.
 
-Default-library admission requires a public release and an accepted pull
-request in `hacs/default`. Until that review is complete, use the transitional
-custom-repository method below.
+### 2. Add the integration
 
-### Transitional custom-repository installation
+[![Open your Home Assistant instance and start setting up Immich Gallery.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=immich_gallery)
 
-1. Open **HACS**.
-2. Open the menu and choose **Custom repositories**.
-3. Add `https://github.com/ofilis/ha-immich-gallery`.
-4. Select the **Integration** category.
-5. Download **Immich Gallery** and restart Home Assistant.
-6. Go to **Settings → Devices & services → Add integration**.
-7. Select **Immich Gallery**.
+You can also go to **Settings → Devices & services → Add integration** and search
+for **Immich Gallery**.
 
-## Updates and release notes
+## Setup
 
-Immich Gallery publishes full GitHub Releases for stable versions. HACS reads
-the body of each GitHub Release and displays it as the update announcement, so
-users can review changes before installing an update.
+During setup:
 
-Every release keeps these values aligned:
+1. Enter the address of your Immich server.
+2. Enter the dedicated Immich API key.
+3. Choose the image sources you want to create.
+4. Set the rotation interval and repeat-avoidance history.
 
-- the version in `custom_components/immich_gallery/manifest.json`;
-- the version section in `CHANGELOG.md`;
-- the curated release announcement under `docs/releases/`;
-- the GitHub tag and full GitHub Release.
-
-A tag without a published GitHub Release is not treated as a stable Immich
-Gallery release. See [docs/RELEASING.md](docs/RELEASING.md) for the maintainer
-checklist.
-
-## Initial setup
-
-Enter the root address of the Immich instance and the dedicated API key.
-Both root URLs and URLs ending in `/api` are accepted.
-
-Supported examples:
+Common host formats include:
 
 ```text
 https://photos.example.com
 https://example.com/immich
 http://192.168.1.42:2283
 http://100.64.12.34:2283
-https://immich.my-tailnet.ts.net
+https://immich.example-tailnet.ts.net
 ```
 
-API keys are sent only in the `x-api-key` request header. They are never
-inserted into an image URL or query string.
+TLS certificate verification is enabled by default and should normally remain
+enabled.
 
-TLS verification is enabled by default. Disable it only for a deliberately
-self-signed/private certificate on a trusted path. Plain local HTTP and
-Tailscale HTTP are supported, but HTTPS remains preferable whenever the
-network design allows it.
+## Add a gallery to a dashboard
 
-After validation, select at least one source:
-
-- entire library;
-- favorites;
-- one or more albums.
-
-No image source is enabled by default. This prevents broad library or favorite
-entities from being created unless the user explicitly selects them. Removing
-a source later also removes its obsolete entity-registry entry, so it does not
-remain listed as unavailable.
-
-Each enabled source creates its own `image` entity.
-
-## Changing the configuration later
-
-Open:
-
-**Settings → Devices & services → Immich Gallery → Configure**
-
-The Configure screen exposes:
-
-| Setting | Purpose |
-| --- | --- |
-| Immich host | Move between HTTPS, LAN HTTP, reverse proxy, or Tailscale |
-| New API key | Rotate the credential; leave blank to keep the stored key |
-| Verify TLS certificate | Keep enabled unless a trusted private certificate requires otherwise |
-| Entire library | Enable or disable the library entity |
-| Favorites | Enable or disable the favorites entity |
-| Albums | Add or remove album entities |
-| Recently shown images to avoid | Per-source repeat-protection window, 0–100 |
-| Refresh interval | Minutes between rotations, 1–60 |
-
-A changed host or key is validated before it is stored. The new endpoint must
-resolve to the same Immich user, preventing an accidental switch to an
-unrelated account under the existing config entry.
-
-## Randomization design
-
-Large libraries must not be downloaded into Home Assistant just to select one
-photo. Immich Gallery therefore uses Immich's stable
-[`POST /search/random`](https://api.immich.app/endpoints/search/searchRandom)
-endpoint with the relevant library, favorites, or album filter.
-
-For every source and rotation:
-
-1. Immich performs the random selection on the server across all matching
-   images.
-2. The integration requests a bounded candidate batch. Its size is the
-   configured recent-history window plus 10, clamped to 10–100.
-3. Duplicate asset IDs in the response are removed.
-4. Candidates displayed recently by that source are excluded.
-5. One remaining candidate is selected uniformly with Python's
-   cryptographic random selector.
-6. If every returned candidate belongs to the recent history, the least
-   recently displayed candidate is used instead of immediately repeating the
-   newest image.
-
-This remains scalable for very large libraries because at most 100 metadata
-rows are requested per source. It also behaves sensibly for small albums by
-cycling toward the least recently seen item.
-
-The default recent-history window is 20 images per source. With the default
-five-minute refresh interval, that represents roughly 100 minutes of recent
-display history when enough distinct images are available. A value of `0`
-disables repeat avoidance.
-
-Recent asset IDs exist only in runtime memory. They are not written to Home
-Assistant state, diagnostics, logs, or this repository, and the history resets
-when the integration reloads or Home Assistant restarts.
-
-## Image formats
-
-The source file format is intentionally separated from the displayed format.
-Immich Gallery requests:
-
-```text
-GET /api/assets/{id}/thumbnail?size=preview
-```
-
-Immich performs its normal preview generation, so an original HEIC, HEIF, RAW,
-TIFF, or other supported source can be displayed without Home Assistant
-downloading the original file.
-
-The integration accepts browser-safe preview responses in AVIF, GIF, JPEG,
-PNG, and WebP. SVG is deliberately rejected, and every preview is limited to
-20 MiB. If Immich cannot generate a supported preview for an asset, that
-source remains unavailable for the current cycle while its last good image is
-preserved.
-
-## Dashboard examples
-
-The final entity ID is assigned by Home Assistant and can be edited from the
-entity settings.
-
-### Picture entity
+Each selected source creates an `image` entity. Choose the entity shown in your
+Home Assistant instance and add it with a Picture Entity card:
 
 ```yaml
 type: picture-entity
@@ -234,129 +109,59 @@ show_state: false
 fit_mode: contain
 ```
 
-### Favorites
+Selected albums appear as separate entities named after their albums. Home
+Assistant lets you rename both the entity and its entity ID.
 
-```yaml
-type: picture-entity
-entity: image.immich_gallery_random_favorites
-show_name: false
-show_state: false
-fit_mode: contain
-tap_action:
-  action: more-info
-```
+## Change settings later
 
-Selected albums appear as separate image entities named after the albums.
+Open:
+
+**Settings → Devices & services → Immich Gallery → Configure**
+
+From there you can change the Immich host, rotate the API key, enable or disable
+TLS verification, select albums and other image sources, adjust repeat avoidance,
+and change the rotation interval.
+
+## How it works
+
+Immich performs the random search on the server. Immich Gallery requests a small
+set of candidates, excludes recently displayed images, and chooses the next image.
+This avoids loading an entire large library into Home Assistant.
+
+The displayed image is an Immich-generated preview rather than the original file.
+This allows browser-friendly viewing of photos whose originals are stored as HEIC,
+HEIF, RAW, TIFF, or other formats supported by Immich.
 
 ## Privacy and security
 
-- Runtime traffic goes only from Home Assistant to the configured Immich host.
-- No telemetry, analytics, crash-reporting service, or cloud relay exists.
-- Redirects are rejected so the API key cannot be forwarded to another host.
-- User-supplied URLs containing credentials, query strings, or fragments are
-  rejected.
-- Server-provided user, album, and asset IDs are validated as UUIDs before
-  being used.
-- Only previews are downloaded; original assets are never requested.
-- Image MIME types and response sizes are restricted.
-- The API key, host, user ID, album IDs, asset IDs, filenames, EXIF data, and
-  image bytes are excluded from diagnostics.
-- Entity state exposes no filename, EXIF, asset ID, or capture time.
-- GitHub Actions use read-only repository permissions and immutable commit
-  SHAs.
+- Images travel directly between Home Assistant and the Immich server you configure.
+- The API key is sent only in the `x-api-key` request header.
+- Redirects are rejected to prevent credentials from being forwarded to another host.
+- Original image files are not requested.
+- Credentials, filenames, EXIF data, image bytes, and asset identifiers are excluded
+  from diagnostics.
+- Image types and response sizes are restricted before content is accepted.
 
-Like any API credential stored by Home Assistant, the key remains available to
-an administrator with access to Home Assistant's private storage. Protect Home
-Assistant backups and configuration storage accordingly.
+Protect Home Assistant backups and configuration storage because, like other API
+credentials, the Immich key is stored in Home Assistant's private configuration.
+See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
-See [SECURITY.md](SECURITY.md) for vulnerability reporting and credential
-response guidance.
+## Support and contributing
 
-## Branding
+- Check the [changelog](CHANGELOG.md) for release notes.
+- Open a [GitHub issue](https://github.com/ofilis/ha-immich-gallery/issues) for a bug
+  or feature request.
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request.
 
-The small integration icon uses the official Immich flower so the connection
-to Immich remains immediately recognizable in HACS and Home Assistant. No
-Immich banner, wide wordmark, screenshot, or marketing image is displayed in
-this README.
-
-Immich and its flower mark belong to their respective owner and are not
-covered by this repository's MIT license. Their use identifies compatibility
-and does not imply sponsorship or endorsement. Local brand files avoid a
-runtime request to an external branding service.
-
-See [BRANDING.md](BRANDING.md) for the exact upstream source, hash, attribution,
-and the non-affiliation notice.
-
-> [!NOTE]
-> HACS 2.0.5 still requests custom-integration icons from the legacy public
-> brand CDN in its repository list and update entity. This can show an
-> **Icon not available** placeholder even though Home Assistant correctly
-> renders the bundled local icon. This is an upstream HACS limitation tracked
-> in [hacs/integration#5223](https://github.com/hacs/integration/issues/5223)
-> and [hacs/integration#5402](https://github.com/hacs/integration/issues/5402).
-> The repository-list work is tracked in the paired
-> [hacs/integration#5388](https://github.com/hacs/integration/pull/5388) and
-> [hacs/frontend#945](https://github.com/hacs/frontend/pull/945) changes; the
-> update entity requires a separate upstream change.
-> It does not block default-library admission because that validation accepts
-> the bundled local `brand` directory. See the
-> [complete icon analysis](docs/HACS_ICON.md).
-
-## Migration from older custom integrations
-
-Older custom components using the `immich` domain collide with Home Assistant's
-built-in Immich integration. Remove or disable the old custom component before
-restarting Home Assistant.
-
-Immich Gallery uses the separate `immich_gallery` domain. Entity IDs from an
-older component are not migrated automatically; update dashboard cards and
-automations after installation.
-
-## HACS default-library status
-
-The repository meets the published integration requirements and has passing
-HACS and Hassfest validation, local brand assets, and a full GitHub Release.
-The remaining external step is an owner-submitted pull request adding
-`ofilis/ha-immich-gallery` to the `hacs/default` integration list.
-
-No banner, personal image, or README screenshot is needed: HACS applies its
-README image check only to plugins and themes, not integrations. The exact
-verified evidence, release-order rule, alphabetic insertion point, and current
-pull-request template are documented in
-[docs/HACS_SUBMISSION.md](docs/HACS_SUBMISSION.md).
-
-HACS notes that new default-repository reviews can take months. During that
-period, the same release can be installed through the custom-repository route.
-
-## Development
-
-```bash
-python -m pip install -r requirements_test.txt
-ruff check .
-ruff format --check .
-python -m pytest
-```
-
-The test suite covers URL safety, HTTPS/LAN/Tailscale address normalization,
-real loopback HTTP communication, request headers, permissions, bounded image
-downloads, path-injection prevention, recent-history randomization, Configure
-fields, and privacy-safe diagnostics.
-
-The project was independently implemented against the public Immich API and
-Home Assistant developer documentation. Third-party integration source was not
-copied. See [RESEARCH.md](RESEARCH.md) for the clean-room findings and design
-decisions.
-
-## Contributing
-
-Bug reports and focused pull requests are welcome. Never attach real API keys,
-private hostnames, album or asset IDs, filenames, EXIF data, or private library
-screenshots to a public issue.
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a change.
+Never include API keys, private hostnames, album or asset IDs, EXIF data, or private
+photos in a public issue.
 
 ## License
 
-Integration code and original project material: MIT © 2026 Okan Filis.
-Third-party names, logos, and trademarks are excluded; see
-[BRANDING.md](BRANDING.md).
+Immich Gallery is released under the [MIT License](LICENSE).
+
+Logo usage and attribution are documented in [BRANDING.md](BRANDING.md).
+
+Immich Gallery is an independent community project and is not affiliated with or
+endorsed by Immich, FUTO, Home Assistant, the Open Home Foundation, or HACS.
+Third-party names and marks remain the property of their respective owners.

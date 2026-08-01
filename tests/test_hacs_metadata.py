@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 COMPONENTS = ROOT / "custom_components"
 INTEGRATION = COMPONENTS / "immich_gallery"
+ASSETS = ROOT / "assets"
 
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 REQUIRED_MANIFEST_KEYS = {
@@ -63,6 +64,22 @@ def test_local_brand_icons_have_required_png_dimensions() -> None:
 
     assert _png_dimensions(brand / "icon.png") == (256, 256)
     assert _png_dimensions(brand / "icon@2x.png") == (512, 512)
+    assert (brand / "icon.png").read_bytes() == (ASSETS / "icon-256.png").read_bytes()
+    assert (brand / "icon@2x.png").read_bytes() == (
+        ASSETS / "icon-512.png"
+    ).read_bytes()
+
+
+def test_project_logo_assets_have_expected_dimensions() -> None:
+    """The selected logo and its required icon sizes remain renderable."""
+    expected_pngs = {
+        "logo.png": (1254, 1254),
+        "icon-256.png": (256, 256),
+        "icon-512.png": (512, 512),
+    }
+
+    for filename, dimensions in expected_pngs.items():
+        assert _png_dimensions(ASSETS / filename) == dimensions
 
 
 def test_validation_workflow_has_hacs_and_hassfest_without_ignores() -> None:

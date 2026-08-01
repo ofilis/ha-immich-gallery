@@ -69,8 +69,8 @@ The current official requirements say:
   consulting the legacy Home Assistant brands repository.
 
 Immich Gallery meets those requirements. The Home Assistant integration page
-successfully rendering the flower confirms that the installed component
-contains a readable local asset.
+successfully rendering the bundled project icon confirms that the installed
+component contains a readable local asset.
 
 Automated tests additionally verify:
 
