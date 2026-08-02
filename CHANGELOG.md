@@ -7,6 +7,8 @@ and the project uses semantic versioning.
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-08-02
+
 ### Fixed
 
 - Use absolute image URLs for the README logo and license badge so HACS can
@@ -81,7 +83,8 @@ and the project uses semantic versioning.
   with documented upstream source, hash, and trademark exclusion; no banner
   or wide wordmark is included.
 
-[Unreleased]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.0...v0.1.1
