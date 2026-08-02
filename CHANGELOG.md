@@ -7,6 +7,11 @@ and the project uses semantic versioning.
 
 ## [Unreleased]
 
+### Fixed
+
+- Use absolute image URLs for the README logo and license badge so HACS can
+  render them outside GitHub's relative-path resolver.
+
 ## [0.1.3] - 2026-08-02
 
 ### Fixed

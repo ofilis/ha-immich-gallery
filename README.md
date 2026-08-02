@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" width="180" alt="Immich Gallery logo">
+  <img src="https://raw.githubusercontent.com/ofilis/ha-immich-gallery/main/assets/logo.png" width="180" alt="Immich Gallery logo">
 </p>
 
 <div align="center">
@@ -13,7 +13,7 @@ with no cloud relay or third-party service.
 
 [![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Home Assistant 2026.4+](https://img.shields.io/badge/Home%20Assistant-2026.4%2B-18BCF2.svg)](https://www.home-assistant.io/)
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+<img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
 
 </div>
 
