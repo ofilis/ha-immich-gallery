@@ -94,6 +94,18 @@ def test_project_logo_assets_have_expected_dimensions() -> None:
         assert _png_color_type(ASSETS / filename) == 6
 
 
+def test_readme_uses_hacs_safe_absolute_brand_images() -> None:
+    """HACS renders README images without GitHub's relative-path rewriting."""
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert (
+        'src="https://raw.githubusercontent.com/ofilis/ha-immich-gallery/'
+        'main/assets/logo.png"' in readme
+    )
+    assert 'src="assets/logo.png"' not in readme
+    assert 'src="https://img.shields.io/badge/license-MIT-green.svg"' in readme
+
+
 def test_validation_workflow_has_hacs_and_hassfest_without_ignores() -> None:
     """Default inclusion requires both validators with no HACS ignores."""
     workflow = (ROOT / ".github" / "workflows" / "validate.yml").read_text(
