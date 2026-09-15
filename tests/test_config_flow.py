@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+from unittest.mock import Mock
+
+import pytest
 from homeassistant.const import CONF_API_KEY, CONF_URL, CONF_VERIFY_SSL
 
 from custom_components.immich_gallery.config_flow import (
+    ImmichGalleryConfigFlow,
     _settings_schema,
     _source_schema,
 )
@@ -18,6 +23,26 @@ from custom_components.immich_gallery.const import (
 from custom_components.immich_gallery.models import Album
 
 ALBUM_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+
+
+@pytest.mark.parametrize(
+    "has_listener,changed", [(True, True), (True, False), (False, True)]
+)
+def test_connection_update_reloads_once(has_listener, changed):
+    """Reauth and reconfigure delegate to the listener or schedule one reload."""
+    flow = ImmichGalleryConfigFlow()
+    flow.hass = Mock()
+    flow.hass.config_entries.async_update_entry.return_value = changed
+    entry = SimpleNamespace(
+        entry_id="entry", update_listeners=[Mock()] if has_listener else []
+    )
+    result = flow._async_finish_connection_update(entry, {}, "reauth_successful")
+    assert result["reason"] == "reauth_successful"
+    schedule = flow.hass.config_entries.async_schedule_reload
+    if has_listener and changed:
+        schedule.assert_not_called()
+    else:
+        schedule.assert_called_once_with("entry")
 
 
 def test_new_sources_require_explicit_selection() -> None:

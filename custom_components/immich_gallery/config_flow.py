@@ -287,6 +287,16 @@ class ImmichGalleryConfigFlow(ConfigFlow, domain=DOMAIN):
     _connection_data: dict[str, Any]
     _validation: ValidationResult
 
+    @callback
+    def _async_finish_connection_update(
+        self, entry: ConfigEntry, data: dict[str, Any], reason: str
+    ) -> ConfigFlowResult:
+        """Use the entry listener, or explicitly reload an inactive entry."""
+        changed = self.hass.config_entries.async_update_entry(entry, data=data)
+        if not changed or not entry.update_listeners:
+            self.hass.config_entries.async_schedule_reload(entry.entry_id)
+        return self.async_abort(reason=reason)
+
     async def async_step_user(
         self,
         user_input: dict[str, Any] | None = None,
@@ -394,9 +404,8 @@ class ImmichGalleryConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 await self.async_set_unique_id(validation.user_id)
                 self._abort_if_unique_id_mismatch()
-                return self.async_update_reload_and_abort(
-                    entry,
-                    data_updates=normalized,
+                return self._async_finish_connection_update(
+                    entry, normalized, "reauth_successful"
                 )
 
         return self.async_show_form(
@@ -451,9 +460,8 @@ class ImmichGalleryConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 await self.async_set_unique_id(validation.user_id)
                 self._abort_if_unique_id_mismatch()
-                return self.async_update_reload_and_abort(
-                    entry,
-                    data_updates=normalized,
+                return self._async_finish_connection_update(
+                    entry, normalized, "reconfigure_successful"
                 )
 
         return self.async_show_form(
@@ -548,7 +556,12 @@ class ImmichGalleryOptionsFlow(OptionsFlow):
                         self.hass.config_entries.async_update_entry(
                             entry,
                             data=normalized,
+                            options=options,
                         )
+                        if not entry.update_listeners:
+                            self.hass.config_entries.async_schedule_reload(
+                                entry.entry_id
+                            )
                         return self.async_create_entry(data=options)
 
         try:
