@@ -11,7 +11,7 @@ from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
-    OptionsFlowWithReload,
+    OptionsFlow,
 )
 from homeassistant.const import CONF_API_KEY, CONF_URL, CONF_VERIFY_SSL
 from homeassistant.core import HomeAssistant, callback
@@ -43,10 +43,12 @@ from .api import (
 )
 from .const import (
     CONF_ALBUM_IDS,
+    CONF_AUTOMATIC_SLIDESHOW,
     CONF_INCLUDE_FAVORITES,
     CONF_INCLUDE_LIBRARY,
     CONF_REFRESH_INTERVAL,
     CONF_REPEAT_WINDOW,
+    DEFAULT_AUTOMATIC_SLIDESHOW,
     DEFAULT_INCLUDE_FAVORITES,
     DEFAULT_INCLUDE_LIBRARY,
     DEFAULT_REFRESH_INTERVAL,
@@ -170,6 +172,12 @@ def _source_schema(
                     unit_of_measurement="min",
                 )
             ),
+            vol.Required(
+                CONF_AUTOMATIC_SLIDESHOW,
+                default=current.get(
+                    CONF_AUTOMATIC_SLIDESHOW, DEFAULT_AUTOMATIC_SLIDESHOW
+                ),
+            ): bool,
         }
     )
 
@@ -185,6 +193,9 @@ def _normalize_options(user_input: Mapping[str, Any]) -> dict[str, Any]:
         ),
         CONF_REPEAT_WINDOW: int(user_input[CONF_REPEAT_WINDOW]),
         CONF_REFRESH_INTERVAL: int(user_input[CONF_REFRESH_INTERVAL]),
+        CONF_AUTOMATIC_SLIDESHOW: bool(
+            user_input.get(CONF_AUTOMATIC_SLIDESHOW, DEFAULT_AUTOMATIC_SLIDESHOW)
+        ),
     }
 
 
@@ -275,6 +286,16 @@ class ImmichGalleryConfigFlow(ConfigFlow, domain=DOMAIN):
 
     _connection_data: dict[str, Any]
     _validation: ValidationResult
+
+    @callback
+    def _async_finish_connection_update(
+        self, entry: ConfigEntry, data: dict[str, Any], reason: str
+    ) -> ConfigFlowResult:
+        """Use the entry listener, or explicitly reload an inactive entry."""
+        changed = self.hass.config_entries.async_update_entry(entry, data=data)
+        if not changed or not entry.update_listeners:
+            self.hass.config_entries.async_schedule_reload(entry.entry_id)
+        return self.async_abort(reason=reason)
 
     async def async_step_user(
         self,
@@ -383,9 +404,8 @@ class ImmichGalleryConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 await self.async_set_unique_id(validation.user_id)
                 self._abort_if_unique_id_mismatch()
-                return self.async_update_reload_and_abort(
-                    entry,
-                    data_updates=normalized,
+                return self._async_finish_connection_update(
+                    entry, normalized, "reauth_successful"
                 )
 
         return self.async_show_form(
@@ -440,9 +460,8 @@ class ImmichGalleryConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 await self.async_set_unique_id(validation.user_id)
                 self._abort_if_unique_id_mismatch()
-                return self.async_update_reload_and_abort(
-                    entry,
-                    data_updates=normalized,
+                return self._async_finish_connection_update(
+                    entry, normalized, "reconfigure_successful"
                 )
 
         return self.async_show_form(
@@ -466,8 +485,8 @@ class ImmichGalleryConfigFlow(ConfigFlow, domain=DOMAIN):
         return ImmichGalleryOptionsFlow()
 
 
-class ImmichGalleryOptionsFlow(OptionsFlowWithReload):
-    """Update the connection and gallery behavior, then reload once."""
+class ImmichGalleryOptionsFlow(OptionsFlow):
+    """Update settings; the entry listener applies or reloads them as needed."""
 
     async def _async_get_albums(self) -> tuple[Album, ...]:
         """Fetch current albums for the selector."""
@@ -534,13 +553,12 @@ class ImmichGalleryOptionsFlow(OptionsFlowWithReload):
                     ):
                         errors["base"] = "wrong_account"
                     else:
-                        connection_changed = dict(entry.data) != normalized
-                        options_changed = dict(entry.options) != options
                         self.hass.config_entries.async_update_entry(
                             entry,
                             data=normalized,
+                            options=options,
                         )
-                        if connection_changed and not options_changed:
+                        if not entry.update_listeners:
                             self.hass.config_entries.async_schedule_reload(
                                 entry.entry_id
                             )

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 from collections import deque
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
@@ -11,8 +12,8 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_KEY, CONF_URL, CONF_VERIFY_SSL
-from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -30,10 +31,12 @@ from .api import (
 )
 from .const import (
     CONF_ALBUM_IDS,
+    CONF_AUTOMATIC_SLIDESHOW,
     CONF_INCLUDE_FAVORITES,
     CONF_INCLUDE_LIBRARY,
     CONF_REFRESH_INTERVAL,
     CONF_REPEAT_WINDOW,
+    DEFAULT_AUTOMATIC_SLIDESHOW,
     DEFAULT_INCLUDE_FAVORITES,
     DEFAULT_INCLUDE_LIBRARY,
     DEFAULT_REFRESH_INTERVAL,
@@ -110,14 +113,123 @@ class ImmichGalleryCoordinator(DataUpdateCoordinator[GalleryData]):
         self._repeat_window = _repeat_window(entry.options)
         self._candidate_count = _candidate_count(self._repeat_window)
         self._recent_assets: dict[str, deque[str]] = {}
+        self._update_lock = asyncio.Lock()
+        self._retry_until = 0.0
+        self._playback_options: tuple[int, bool] | None = None
+        self._playback_revision = 0
 
         super().__init__(
             hass,
             _LOGGER,
             config_entry=entry,
             name=DOMAIN,
-            update_interval=timedelta(minutes=_refresh_minutes(entry.options)),
+            update_interval=(
+                timedelta(minutes=_refresh_minutes(entry.options))
+                if entry.options.get(
+                    CONF_AUTOMATIC_SLIDESHOW, DEFAULT_AUTOMATIC_SLIDESHOW
+                )
+                else None
+            ),
         )
+
+    @property
+    def refresh_minutes(self) -> int:
+        """Return the persisted interval shared by all sources."""
+        return _refresh_minutes(self.config_entry.options)
+
+    @property
+    def automatic_slideshow(self) -> bool:
+        """Return whether timed image changes are enabled."""
+        return bool(
+            self.config_entry.options.get(
+                CONF_AUTOMATIC_SLIDESHOW, DEFAULT_AUTOMATIC_SLIDESHOW
+            )
+        )
+
+    @callback
+    def async_apply_playback_options(self) -> None:
+        """Reschedule playback without fetching images or discarding history."""
+        settings = (self.refresh_minutes, self.automatic_slideshow)
+        if settings == self._playback_options:
+            return
+        self._playback_options = settings
+        self._playback_revision += 1
+        self.update_interval = timedelta(minutes=settings[0]) if settings[1] else None
+        self._unschedule_refresh()
+        if self._listeners and settings[1]:
+            self._schedule_refresh()
+        self.async_update_listeners()
+
+    @callback
+    def async_set_refresh_minutes(self, value: float) -> None:
+        """Persist a validated whole-minute interval and apply it immediately."""
+        if (
+            not math.isfinite(value)
+            or value != int(value)
+            or not MIN_REFRESH_INTERVAL <= value <= MAX_REFRESH_INTERVAL
+        ):
+            raise HomeAssistantError(
+                "Refresh interval must be a whole number from 1 to 60"
+            )
+        self.hass.config_entries.async_update_entry(
+            self.config_entry,
+            options={**self.config_entry.options, CONF_REFRESH_INTERVAL: int(value)},
+        )
+        self.async_apply_playback_options()
+
+    @callback
+    def async_set_automatic_slideshow(self, enabled: bool) -> None:
+        """Persist the playback switch without changing the current image."""
+        self.hass.config_entries.async_update_entry(
+            self.config_entry,
+            options={**self.config_entry.options, CONF_AUTOMATIC_SLIDESHOW: enabled},
+        )
+        self.async_apply_playback_options()
+
+    async def async_next_image(self, source: GallerySource) -> None:
+        """Refresh just one source, preserving the shared automatic schedule."""
+        if self._shutdown_requested or source not in self.sources:
+            raise HomeAssistantError("This image source is no longer available")
+        if self._update_lock.locked():
+            raise HomeAssistantError(
+                "An image update is already in progress; try again shortly"
+            )
+        if self.hass.loop.time() < self._retry_until:
+            raise HomeAssistantError("Immich requested a retry delay; try again later")
+        async with self._update_lock:
+            try:
+                image = await self._async_fetch_source(
+                    source, self.data.images.get(source.key)
+                )
+            except (InvalidAuth, MissingPermission) as err:
+                self.config_entry.async_start_reauth(self.hass)
+                raise HomeAssistantError("Immich credentials need attention") from err
+            except (
+                ApiError,
+                CannotConnect,
+                InvalidResponse,
+                NoAssets,
+                RateLimited,
+                ImageTooLarge,
+                UnsupportedImage,
+            ) as err:
+                if isinstance(err, RateLimited):
+                    self._retry_until = self.hass.loop.time() + err.retry_after
+                raise HomeAssistantError(
+                    "Unable to load the next image from Immich"
+                ) from err
+            errors = dict(self.data.errors)
+            if not self.last_update_success:
+                errors.update(
+                    {s.key: ERROR_API for s in self.sources if s.key != source.key}
+                )
+            errors.pop(source.key, None)
+            self.data = GalleryData(
+                images={**self.data.images, source.key: image}, errors=errors
+            )
+            self.last_update_success = True
+            self.last_exception = None
+            self.async_update_listeners()
 
     def _build_sources(
         self,
@@ -231,6 +343,25 @@ class ImmichGalleryCoordinator(DataUpdateCoordinator[GalleryData]):
         return ERROR_API
 
     async def _async_update_data(self) -> GalleryData:
+        """Serialize timer and manual requests and honor the playback switch."""
+        async with self._update_lock:
+            revision = self._playback_revision
+            if self.data is not None and not self.automatic_slideshow:
+                return self.data
+            if self.hass.loop.time() < self._retry_until:
+                raise UpdateFailed(
+                    "Immich requested a retry delay",
+                    retry_after=self._retry_until - self.hass.loop.time(),
+                )
+            updated = await self._async_fetch_all_sources()
+            # Turning playback off during a download must keep the visible frame.
+            if self.data is not None and (
+                not self.automatic_slideshow or revision != self._playback_revision
+            ):
+                return self.data
+            return updated
+
+    async def _async_fetch_all_sources(self) -> GalleryData:
         """Fetch new images and preserve the last good image on partial failure."""
         previous_data = self.data if self.data is not None else GalleryData()
         previous_images = dict(previous_data.images)
@@ -260,6 +391,7 @@ class ImmichGalleryCoordinator(DataUpdateCoordinator[GalleryData]):
                 errors[source.key] = self._error_code(result)
                 if isinstance(result, RateLimited):
                     retry_after = max(retry_after or 0, result.retry_after)
+                    self._retry_until = self.hass.loop.time() + retry_after
                     transient_error = result
                 elif isinstance(
                     result,

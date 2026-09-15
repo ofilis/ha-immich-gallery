@@ -38,6 +38,8 @@ integration.
 - Server-side random selection that remains efficient with large libraries
 - Repeat avoidance for recently displayed images
 - Rotation interval from 1 to 60 minutes
+- A Next image button for every source, usable from dashboards and automations
+- Live interval slider and Automatic slideshow switch
 - Album, favorites, and whole-library sources
 - Settings that can be changed later without reinstalling
 - HTTPS, local HTTP, reverse proxies, and Tailscale addresses
@@ -114,13 +116,47 @@ Assistant lets you rename both the entity and its entity ID.
 
 ## Change settings later
 
+Open the **Immich Gallery device** to find these controls:
+
+| Control | What it does |
+| --- | --- |
+| **Next image** | Loads another random image for that source only. Each album, favorites, and library source has its own button. |
+| **Refresh interval** | Sets the shared interval from 1 to 60 minutes using a slider. |
+| **Automatic slideshow** | Enables timed changes for all sources. Turn it off to keep the current images and advance only with buttons or automations. |
+
+The slider and switch apply immediately, survive restarts, and share their values
+with **Configure**. Changing the interval or resuming playback starts a new full
+interval. Next image leaves the automatic schedule unchanged. It loads a preview
+from Immich, so the response time depends on your connection. If an update is
+already running, wait for it to finish before pressing again.
+
+On a Home Assistant restart, an initial image is loaded for each source even if
+automatic playback is off; the previous image bytes are not stored on disk.
+
+### Use in automations
+
+Use Home Assistant's **Button: Press**, **Number: Set value**, and **Switch: Turn
+on/off** actions. For example, advance a photo when a motion sensor detects
+someone, or pause the slideshow overnight. All three controls can also be added
+to dashboards.
+
+Example action (replace the entity ID with the button from your installation):
+
+```yaml
+action: button.press
+target:
+  entity_id: button.immich_gallery_random_library_next_image
+```
+
+### Connection and source settings
+
 Open:
 
 **Settings → Devices & services → Immich Gallery → Configure**
 
 From there you can change the Immich host, rotate the API key, enable or disable
 TLS verification, select albums and other image sources, adjust repeat avoidance,
-and change the rotation interval.
+and change the rotation interval or automatic slideshow setting.
 
 ## How it works
 

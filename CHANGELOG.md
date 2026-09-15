@@ -7,6 +7,28 @@ and the project uses semantic versioning.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-15
+
+### Added
+
+- A Next image button for every selected album, favorites, and library source
+  ([#16](https://github.com/ofilis/ha-immich-gallery/issues/16)).
+- A live Refresh interval slider from 1 to 60 minutes, shared across sources.
+- An Automatic slideshow switch to pause timed changes while keeping manual
+  buttons and automations available.
+- Persistent playback settings synchronized with Configure, with no reload for
+  playback-only changes.
+- Tests for source isolation, scheduling, persistence, concurrent requests,
+  rate limits, authentication failures, and integration lifecycle.
+
+### Changed
+
+- Connection and source changes still reload the integration; playback controls
+  apply immediately and retain the current previews and repeat history.
+- Manual refresh failures preserve the last displayed image and report an action
+  error. Concurrent presses do not queue downloads, and server retry delays are
+  respected.
+
 ## [0.1.4] - 2026-08-02
 
 ### Fixed
@@ -83,7 +105,8 @@ and the project uses semantic versioning.
   with documented upstream source, hash, and trademark exclusion; no banner
   or wide wordmark is included.
 
-[Unreleased]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/ofilis/ha-immich-gallery/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.1...v0.1.2
