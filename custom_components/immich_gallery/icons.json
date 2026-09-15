@@ -1,0 +1,7 @@
+{
+  "entity": {
+    "button": {"next_image": {"default": "mdi:skip-next"}},
+    "number": {"refresh_interval": {"default": "mdi:timer-outline"}},
+    "switch": {"automatic_slideshow": {"default": "mdi:play-pause"}}
+  }
+}

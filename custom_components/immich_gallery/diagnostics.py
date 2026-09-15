@@ -10,10 +10,12 @@ from homeassistant.core import HomeAssistant
 
 from .const import (
     CONF_ALBUM_IDS,
+    CONF_AUTOMATIC_SLIDESHOW,
     CONF_INCLUDE_FAVORITES,
     CONF_INCLUDE_LIBRARY,
     CONF_REFRESH_INTERVAL,
     CONF_REPEAT_WINDOW,
+    DEFAULT_AUTOMATIC_SLIDESHOW,
 )
 from .coordinator import ImmichGalleryConfigEntry
 
@@ -43,6 +45,9 @@ async def async_get_config_entry_diagnostics(
             else 0,
             "repeat_window": options.get(CONF_REPEAT_WINDOW),
             "refresh_interval": options.get(CONF_REFRESH_INTERVAL),
+            "automatic_slideshow": options.get(
+                CONF_AUTOMATIC_SLIDESHOW, DEFAULT_AUTOMATIC_SLIDESHOW
+            ),
         },
         "server_version": coordinator.server_version,
         "configured_source_count": len(coordinator.sources),

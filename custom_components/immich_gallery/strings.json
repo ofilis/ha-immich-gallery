@@ -18,17 +18,19 @@
       },
       "sources": {
         "title": "Choose image sources",
-        "description": "Each enabled source creates one image entity.",
+        "description": "Each enabled source creates an image and a Next image button.",
         "data": {
           "include_library": "Random image from the whole library",
           "include_favorites": "Random image from favorites",
           "album_ids": "Albums",
           "repeat_window": "Recent images remembered per source",
-          "refresh_interval": "Refresh interval"
+          "refresh_interval": "Refresh interval",
+          "automatic_slideshow": "Automatic slideshow"
         },
         "data_description": {
           "repeat_window": "Prevents this many recently shown images for each source from being selected again when alternatives are available. Use 0 to disable.",
-          "refresh_interval": "Minutes between image changes. Enter a value from 1 to 60."
+          "refresh_interval": "Minutes between image changes. Enter a value from 1 to 60.",
+          "automatic_slideshow": "Change images automatically. Turn off to advance only with buttons or automations."
         }
       },
       "reauth_confirm": {
@@ -76,14 +78,16 @@
           "include_favorites": "Random image from favorites",
           "album_ids": "Albums",
           "repeat_window": "Recent images remembered per source",
-          "refresh_interval": "Refresh interval"
+          "refresh_interval": "Refresh interval",
+          "automatic_slideshow": "Automatic slideshow"
         },
         "data_description": {
           "url": "HTTPS, local HTTP, Tailscale IP, and MagicDNS hostnames are supported. A trailing /api is accepted.",
           "api_key": "Leave blank to keep the current key.",
           "verify_ssl": "Keep enabled for HTTPS unless the server deliberately uses a trusted private or self-signed certificate.",
           "repeat_window": "Prevents this many recently shown images for each source from being selected again when alternatives are available. Use 0 to disable.",
-          "refresh_interval": "Minutes between image changes. Enter a value from 1 to 60."
+          "refresh_interval": "Minutes between image changes. Enter a value from 1 to 60.",
+          "automatic_slideshow": "Change images automatically. Turn off to advance only with buttons or automations."
         }
       }
     },
@@ -98,6 +102,15 @@
     }
   },
   "entity": {
+    "button": {
+      "next_image": {"name": "{source} next image"}
+    },
+    "number": {
+      "refresh_interval": {"name": "Refresh interval"}
+    },
+    "switch": {
+      "automatic_slideshow": {"name": "Automatic slideshow"}
+    },
     "image": {
       "random_library": {
         "name": "Random library"
