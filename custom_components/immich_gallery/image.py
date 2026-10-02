@@ -10,7 +10,11 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
-from .coordinator import ImmichGalleryConfigEntry, ImmichGalleryCoordinator
+from .coordinator import (
+    RECOVERABLE_ERRORS,
+    ImmichGalleryConfigEntry,
+    ImmichGalleryCoordinator,
+)
 from .models import GallerySource, SourceKind
 
 
@@ -87,33 +91,38 @@ class ImmichGalleryImage(ImageEntity):
 
     @property
     def available(self) -> bool:
-        """Return whether this source has a current successful preview."""
+        """Keep the last good preview visible during recoverable failures."""
         return bool(
             self._coordinator.last_update_success
             and self._source.key in self._coordinator.data.images
-            and self._source.key not in self._coordinator.data.errors
+            and (
+                self._source.key not in self._coordinator.data.errors
+                or self._coordinator.data.errors[self._source.key] in RECOVERABLE_ERRORS
+            )
         )
 
     async def async_image(self) -> bytes | None:
         """Return the already-cached preview without network I/O."""
+        if not self.available:
+            return None
         image = self._coordinator.data.images.get(self._source.key)
         return image.content if image else None
 
     @callback
     def _apply_coordinator_data(self) -> None:
         """Copy the current coordinator data into entity properties."""
+        error = self._coordinator.data.errors.get(self._source.key)
+        self._attr_extra_state_attributes = {
+            "source_type": self._source.kind.value,
+            "image_stale": self.available and error in RECOVERABLE_ERRORS,
+            "last_refresh_error": error,
+        }
         image = self._coordinator.data.images.get(self._source.key)
         if image is None:
-            self._attr_extra_state_attributes = {
-                "source_type": self._source.kind.value,
-            }
             return
 
         self._attr_content_type = image.content_type
         self._attr_image_last_updated = image.fetched_at
-        self._attr_extra_state_attributes = {
-            "source_type": self._source.kind.value,
-        }
 
     @callback
     def _handle_coordinator_update(self) -> None:

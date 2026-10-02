@@ -7,6 +7,28 @@ and the project uses semantic versioning.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-02
+
+### Fixed
+
+- Keep the last successful preview visible when a timed refresh encounters a
+  temporary connection failure or an unusable image, instead of showing
+  unavailable until the next full slideshow cycle.
+- Retry affected sources after 30 seconds and, if necessary, another 60 seconds.
+  Retries are bounded, honor server rate limits, and preserve other sources'
+  regular slideshow timing. Pausing and unloading cancel pending retries.
+- Discard cached images and request reauthentication when the API key is invalid
+  or lacks required permissions; empty sources and non-retryable errors remain
+  unavailable.
+
+### Added
+
+- Privacy-safe `image_stale` and `last_refresh_error` image attributes, plus a
+  stale-source count in diagnostics, to distinguish cached previews from fresh
+  results without exposing personal media or connection details.
+- Regression tests for transient failures, bounded per-source retries, real HA
+  timer recovery, rate limits, authentication, pause, and unload behavior.
+
 ## [0.2.0] - 2026-09-15
 
 ### Added
@@ -105,7 +127,8 @@ and the project uses semantic versioning.
   with documented upstream source, hash, and trademark exclusion; no banner
   or wide wordmark is included.
 
-[Unreleased]: https://github.com/ofilis/ha-immich-gallery/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ofilis/ha-immich-gallery/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/ofilis/ha-immich-gallery/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/ofilis/ha-immich-gallery/compare/v0.1.2...v0.1.3

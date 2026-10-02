@@ -13,7 +13,17 @@ from homeassistant.exceptions import HomeAssistantError
 
 from custom_components import immich_gallery as integration
 from custom_components.immich_gallery import coordinator as coordinator_module
-from custom_components.immich_gallery.api import CannotConnect, InvalidAuth, RateLimited
+from custom_components.immich_gallery.api import (
+    ApiError,
+    CannotConnect,
+    ImageTooLarge,
+    InvalidAuth,
+    InvalidResponse,
+    MissingPermission,
+    NoAssets,
+    RateLimited,
+    UnsupportedImage,
+)
 from custom_components.immich_gallery.button import NextImageButton
 from custom_components.immich_gallery.config_flow import (
     _normalize_options,
@@ -24,6 +34,10 @@ from custom_components.immich_gallery.const import (
     CONF_REFRESH_INTERVAL,
 )
 from custom_components.immich_gallery.coordinator import ImmichGalleryCoordinator
+from custom_components.immich_gallery.diagnostics import (
+    async_get_config_entry_diagnostics,
+)
+from custom_components.immich_gallery.image import ImmichGalleryImage
 from custom_components.immich_gallery.models import (
     AssetMetadata,
     GalleryData,
@@ -61,6 +75,10 @@ async def gallery(tmp_path, monkeypatch):
         pref_disable_polling=False,
         async_on_unload=Mock(),
         async_start_reauth=Mock(),
+        async_start_reauth_if_available=Mock(),
+        async_create_background_task=lambda hass, coro, **kwargs: (
+            hass.async_create_background_task(coro, **kwargs)
+        ),
     )
 
     def update_entry(updated, *, options):
@@ -82,6 +100,242 @@ async def gallery(tmp_path, monkeypatch):
     )
     yield coordinator
     await coordinator.async_shutdown()
+
+
+def image_entity(gallery, source=LIBRARY):
+    """Read real entity behavior without registering a frontend platform."""
+    entity = object.__new__(ImmichGalleryImage)
+    entity._coordinator = gallery
+    entity._source = source
+    entity._apply_coordinator_data()
+    return entity
+
+
+def scheduled_delay(gallery):
+    """Inspect the real HA event-loop timer instead of mocking scheduling."""
+    return gallery._unsub_refresh.__self__.when() - gallery.hass.loop.time()
+
+
+@pytest.mark.parametrize(
+    "error", [CannotConnect(), InvalidResponse(), UnsupportedImage(), ImageTooLarge()]
+)
+async def test_automatic_failure_keeps_cached_image_and_retries(gallery, error):
+    """A single failed cycle no longer makes an existing preview unavailable."""
+    gallery.async_add_listener(Mock())
+    original = gallery.data.images["library"]
+    gallery.api.async_download_preview.side_effect = error
+    await gallery.async_refresh()
+    entity = image_entity(gallery)
+    assert entity.available
+    assert await entity.async_image() == original.content
+    assert entity.image_last_updated == original.fetched_at
+    assert entity.extra_state_attributes["image_stale"] is True
+    assert entity.extra_state_attributes["last_refresh_error"]
+    assert 29 <= scheduled_delay(gallery) <= 32
+    gallery.api.async_download_preview.side_effect = None
+    await gallery.async_refresh()
+    entity._apply_coordinator_data()
+    assert entity.available
+    assert await entity.async_image() == b"new-preview"
+    assert entity.extra_state_attributes["image_stale"] is False
+    assert entity.extra_state_attributes["last_refresh_error"] is None
+    assert 299 <= scheduled_delay(gallery) <= 302
+
+
+async def test_short_retries_are_bounded_and_only_fetch_failed_sources(gallery):
+    """Two extra attempts preserve the successful source and its regular deadline."""
+    gallery.async_add_listener(Mock())
+
+    async def select(source, **_kwargs):
+        if source == LIBRARY:
+            raise CannotConnect()
+        return AssetMetadata("favorite-next")
+
+    gallery.api.async_get_random_asset.side_effect = select
+    await gallery.async_refresh()
+    favorite = gallery.data.images["favorites"]
+    deadline = gallery._next_regular_update
+    for expected_delay in (60, 300):
+        gallery.api.async_get_random_asset.reset_mock()
+        await gallery.async_refresh()
+        assert gallery.api.async_get_random_asset.await_count == 1
+        assert gallery.api.async_get_random_asset.call_args.args[0] == LIBRARY
+        assert gallery.data.images["favorites"] is favorite
+        assert gallery._next_regular_update == deadline
+        assert expected_delay - 1 <= scheduled_delay(gallery) <= expected_delay + 2
+    assert gallery._retry_at is None
+    # The next regular cycle retries every source and resets the retry budget.
+    gallery._next_regular_update = gallery.hass.loop.time() - 1
+    gallery.api.async_get_random_asset.reset_mock()
+    await gallery.async_refresh()
+    assert gallery.api.async_get_random_asset.await_count == 2
+    assert gallery._retry_attempt == 0
+    assert 29 <= scheduled_delay(gallery) <= 32
+
+
+async def test_retry_does_not_delay_regular_one_minute_rotation(gallery):
+    """A short slideshow interval takes precedence over a later retry."""
+    gallery.async_set_refresh_minutes(1)
+    gallery.async_add_listener(Mock())
+    gallery.api.async_download_preview.side_effect = CannotConnect()
+    await gallery.async_refresh()
+    await gallery.async_refresh()
+    assert 59 <= scheduled_delay(gallery) <= 62
+
+
+async def test_rate_limit_keeps_preview_and_honors_server_delay(gallery):
+    """Even an explicit refresh cannot bypass Retry-After or blank cached media."""
+    gallery.async_add_listener(Mock())
+    gallery.api.async_get_random_asset.side_effect = RateLimited(600)
+    await gallery.async_refresh()
+    assert image_entity(gallery).available
+    assert 600 <= scheduled_delay(gallery) <= 602
+    gallery.api.async_get_random_asset.reset_mock()
+    await gallery.async_refresh()
+    gallery.api.async_get_random_asset.assert_not_awaited()
+    assert image_entity(gallery).available
+    assert 600 <= scheduled_delay(gallery) <= 602
+
+
+@pytest.mark.parametrize("error", [InvalidAuth(), MissingPermission("asset.view")])
+async def test_automatic_auth_failure_clears_cache_and_stops_retries(gallery, error):
+    """Revoked access is not hidden by stale previews or an automatic retry loop."""
+    gallery.async_add_listener(Mock())
+    gallery.api.async_download_preview.side_effect = CannotConnect()
+    await gallery.async_refresh()
+    gallery.api.async_download_preview.side_effect = error
+    await gallery.async_refresh()
+    assert not image_entity(gallery).available
+    assert await image_entity(gallery).async_image() is None
+    assert not gallery.data.images
+    assert not gallery._recent_assets
+    assert gallery._unsub_refresh is None
+    gallery.config_entry.async_start_reauth_if_available.assert_called_once()
+
+
+@pytest.mark.parametrize("error", [NoAssets(), ApiError()])
+async def test_permanent_source_errors_remain_unavailable(gallery, error):
+    """Empty sources and non-retryable API errors are not reported as healthy."""
+    gallery.async_add_listener(Mock())
+    gallery.api.async_get_random_asset.side_effect = error
+    await gallery.async_refresh()
+    assert not image_entity(gallery).available
+    assert await image_entity(gallery).async_image() is None
+    assert gallery._retry_at is None
+    assert 299 <= scheduled_delay(gallery) <= 302
+    assert not gallery.data.images
+    # A later network failure must not bring back media from a removed source.
+    gallery.api.async_get_random_asset.side_effect = CannotConnect()
+    gallery._next_regular_update = gallery.hass.loop.time() - 1
+    await gallery.async_refresh()
+    assert not image_entity(gallery).available
+    assert not gallery.data.images
+    assert 299 <= scheduled_delay(gallery) <= 302
+
+
+async def test_failure_without_any_cached_image_remains_unavailable(gallery):
+    """A cold start cannot fabricate a last-good image."""
+    gallery.data = GalleryData()
+    gallery.api.async_download_preview.side_effect = CannotConnect()
+    await gallery.async_refresh()
+    assert not gallery.last_update_success
+    assert not image_entity(gallery).available
+    assert await image_entity(gallery).async_image() is None
+
+
+async def test_pausing_cancels_pending_retry_and_resume_uses_full_interval(gallery):
+    """Pausing must cancel retries as well as ordinary slideshow updates."""
+    gallery.async_add_listener(Mock())
+    gallery.api.async_download_preview.side_effect = CannotConnect()
+    await gallery.async_refresh()
+    before = gallery.data
+    gallery.async_set_automatic_slideshow(False)
+    assert gallery._unsub_refresh is None
+    assert gallery._retry_at is None
+    assert await gallery._async_update_data() is before
+    gallery.async_set_automatic_slideshow(True)
+    assert 299 <= scheduled_delay(gallery) <= 302
+
+
+async def test_manual_recovery_cancels_obsolete_short_retry(gallery):
+    """A button recovery must not advance all sources at the old retry time."""
+    gallery.sources = (LIBRARY,)
+    gallery.async_add_listener(Mock())
+    gallery.api.async_download_preview.side_effect = CannotConnect()
+    await gallery.async_refresh()
+    gallery.api.async_download_preview.side_effect = None
+    await gallery.async_next_image(LIBRARY)
+    assert gallery._retry_at is None
+    assert 299 <= scheduled_delay(gallery) <= 302
+
+
+async def test_stale_diagnostics_keep_errors_visible_without_media_details(gallery):
+    """Availability and diagnostics distinguish cached media from fresh media."""
+    gallery.api.async_download_preview.side_effect = CannotConnect("private-server")
+    await gallery.async_refresh()
+    gallery.config_entry.runtime_data = gallery
+    data = await async_get_config_entry_diagnostics(gallery.hass, gallery.config_entry)
+    assert data["available_source_count"] == 2
+    assert data["stale_source_count"] == 2
+    assert data["error_code_counts"] == {"cannot_connect": 2}
+    assert "private-server" not in str(data)
+
+
+async def test_real_scheduled_retry_recovers_failed_source(gallery):
+    """Let HA's timer actually fire and publish recovery without a manual refresh."""
+    recovered = asyncio.Event()
+
+    def updated():
+        if not gallery.data.errors:
+            recovered.set()
+
+    gallery.async_add_listener(updated)
+
+    async def select(source, **_kwargs):
+        if source == LIBRARY:
+            raise CannotConnect()
+        return AssetMetadata("favorite-next")
+
+    gallery.api.async_get_random_asset.side_effect = select
+    await gallery.async_refresh()
+    favorite = gallery.data.images["favorites"]
+    gallery.api.async_get_random_asset.side_effect = None
+    gallery.api.async_get_random_asset.reset_mock()
+    # Compress only the deadline; use the real scheduling and callback path.
+    gallery._retry_at = gallery.hass.loop.time() + 0.01
+    gallery._schedule_refresh()
+    await asyncio.wait_for(recovered.wait(), timeout=4)
+    assert gallery.api.async_get_random_asset.await_count == 1
+    assert gallery.api.async_get_random_asset.call_args.args[0] == LIBRARY
+    assert gallery.data.images["favorites"] is favorite
+    assert image_entity(gallery).available
+    assert gallery._retry_at is None
+
+
+async def test_partial_cold_start_retries_source_without_cached_media(gallery):
+    """An initially unavailable source becomes available when its retry succeeds."""
+    gallery.data = GalleryData()
+    gallery.api.async_download_preview.side_effect = [
+        CannotConnect(),
+        (b"ok", "image/jpeg"),
+    ]
+    await gallery.async_refresh()
+    assert not image_entity(gallery).available
+    assert image_entity(gallery, FAVORITES).available
+    gallery.api.async_download_preview.side_effect = None
+    await gallery.async_refresh()
+    assert image_entity(gallery).available
+
+
+async def test_unload_cancels_pending_short_retry(gallery):
+    """No automatic retry survives unloading the integration."""
+    gallery.async_add_listener(Mock())
+    gallery.api.async_download_preview.side_effect = CannotConnect()
+    await gallery.async_refresh()
+    timer = gallery._unsub_refresh.__self__
+    await gallery.async_shutdown()
+    assert timer.cancelled()
+    assert gallery._unsub_refresh is None
 
 
 async def test_button_changes_only_its_source_and_preserves_timer(gallery):
@@ -208,6 +462,9 @@ async def test_manual_auth_failure_starts_reauthentication(gallery):
     with pytest.raises(HomeAssistantError, match="credentials"):
         await gallery.async_next_image(LIBRARY)
     gallery.config_entry.async_start_reauth.assert_called_once_with(gallery.hass)
+    assert not gallery.data.images
+    assert not image_entity(gallery).available
+    assert await image_entity(gallery).async_image() is None
 
 
 async def test_overlapping_button_presses_do_not_queue_downloads(gallery):

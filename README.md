@@ -168,6 +168,14 @@ The displayed image is an Immich-generated preview rather than the original file
 This allows browser-friendly viewing of photos whose originals are stored as HEIC,
 HEIF, RAW, TIFF, or other formats supported by Immich.
 
+If a timed refresh fails temporarily, the last good photo stays visible while
+Immich Gallery retries the affected source. Two short retries (after 30 seconds,
+then another 60 seconds) are followed by the normal interval; server rate limits
+take precedence. Other sources keep their regular timing. During an extended
+outage, the cached photo remains visible and its `image_stale` attribute is true;
+`last_refresh_error` provides a non-sensitive error code. Invalid credentials or
+missing permissions still require reauthentication.
+
 ## Privacy and security
 
 - Images travel directly between Home Assistant and the Immich server you configure.
