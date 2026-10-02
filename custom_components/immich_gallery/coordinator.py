@@ -61,6 +61,18 @@ ERROR_NO_ASSETS = "no_assets"
 ERROR_RATE_LIMITED = "rate_limited"
 ERROR_UNSUPPORTED_IMAGE = "unsupported_image"
 
+# Keep cached previews only for recoverable connection or individual media errors.
+RECOVERABLE_ERRORS = frozenset(
+    {
+        ERROR_CANNOT_CONNECT,
+        ERROR_RATE_LIMITED,
+        ERROR_INVALID_RESPONSE,
+        ERROR_IMAGE_TOO_LARGE,
+        ERROR_UNSUPPORTED_IMAGE,
+    }
+)
+RETRY_DELAYS = (30, 60)
+
 
 type ImmichGalleryConfigEntry = ConfigEntry[ImmichGalleryCoordinator]
 
@@ -115,6 +127,10 @@ class ImmichGalleryCoordinator(DataUpdateCoordinator[GalleryData]):
         self._recent_assets: dict[str, deque[str]] = {}
         self._update_lock = asyncio.Lock()
         self._retry_until = 0.0
+        self._next_regular_update = 0.0
+        self._retry_at: float | None = None
+        self._retry_sources: set[str] = set()
+        self._retry_attempt = 0
         self._playback_options: tuple[int, bool] | None = None
         self._playback_revision = 0
 
@@ -147,6 +163,18 @@ class ImmichGalleryCoordinator(DataUpdateCoordinator[GalleryData]):
         )
 
     @callback
+    def _schedule_refresh(self) -> None:
+        """Use HA's single timer for bounded retries and the regular slideshow."""
+        if self._next_regular_update:
+            deadline = self._next_regular_update
+            if self._retry_at is not None:
+                deadline = min(deadline, self._retry_at)
+            deadline = max(deadline, self._retry_until)
+            # HA rounds its timer origin; round up to never bypass Retry-After.
+            self._retry_after = max(1, math.ceil(deadline - self.hass.loop.time()) + 1)
+        super()._schedule_refresh()
+
+    @callback
     def async_apply_playback_options(self) -> None:
         """Reschedule playback without fetching images or discarding history."""
         settings = (self.refresh_minutes, self.automatic_slideshow)
@@ -154,6 +182,11 @@ class ImmichGalleryCoordinator(DataUpdateCoordinator[GalleryData]):
             return
         self._playback_options = settings
         self._playback_revision += 1
+        self._next_regular_update = 0.0
+        self._retry_at = None
+        self._retry_sources.clear()
+        self._retry_attempt = 0
+        self._retry_after = None
         self.update_interval = timedelta(minutes=settings[0]) if settings[1] else None
         self._unschedule_refresh()
         if self._listeners and settings[1]:
@@ -202,6 +235,9 @@ class ImmichGalleryCoordinator(DataUpdateCoordinator[GalleryData]):
                     source, self.data.images.get(source.key)
                 )
             except (InvalidAuth, MissingPermission) as err:
+                self._clear_unauthorized_images()
+                self.last_update_success = False
+                self.async_update_listeners()
                 self.config_entry.async_start_reauth(self.hass)
                 raise HomeAssistantError("Immich credentials need attention") from err
             except (
@@ -224,6 +260,11 @@ class ImmichGalleryCoordinator(DataUpdateCoordinator[GalleryData]):
                     {s.key: ERROR_API for s in self.sources if s.key != source.key}
                 )
             errors.pop(source.key, None)
+            self._retry_sources.discard(source.key)
+            if self._retry_at is not None and not self._retry_sources:
+                self._retry_at = None
+                if self._listeners and self.automatic_slideshow:
+                    self._schedule_refresh()
             self.data = GalleryData(
                 images={**self.data.images, source.key: image}, errors=errors
             )
@@ -349,19 +390,68 @@ class ImmichGalleryCoordinator(DataUpdateCoordinator[GalleryData]):
             if self.data is not None and not self.automatic_slideshow:
                 return self.data
             if self.hass.loop.time() < self._retry_until:
+                if self.data is not None and self.data.images:
+                    return self.data
                 raise UpdateFailed(
                     "Immich requested a retry delay",
                     retry_after=self._retry_until - self.hass.loop.time(),
                 )
-            updated = await self._async_fetch_all_sources()
+            now = self.hass.loop.time()
+            is_retry = bool(self._retry_sources) and now < self._next_regular_update
+            sources = (
+                tuple(s for s in self.sources if s.key in self._retry_sources)
+                if is_retry
+                else self.sources
+            )
+            try:
+                updated = await self._async_fetch_all_sources(sources)
+            except UpdateFailed:
+                # With no cached images, HA marks the entry unavailable. Do not
+                # reuse an expired deadline and create a rapid failure loop.
+                self._retry_sources.clear()
+                self._retry_at = None
+                self._next_regular_update = (
+                    self.hass.loop.time() + self.refresh_minutes * 60
+                )
+                raise
             # Turning playback off during a download must keep the visible frame.
             if self.data is not None and (
                 not self.automatic_slideshow or revision != self._playback_revision
             ):
                 return self.data
+            if is_retry:
+                self._retry_attempt += 1
+            else:
+                self._retry_attempt = 0
+                self._next_regular_update = (
+                    self.hass.loop.time() + self.refresh_minutes * 60
+                )
+            self._retry_sources = {
+                key
+                for key, error in updated.errors.items()
+                if error in RECOVERABLE_ERRORS
+            }
+            self._retry_at = (
+                self.hass.loop.time() + RETRY_DELAYS[self._retry_attempt]
+                if self._retry_sources and self._retry_attempt < len(RETRY_DELAYS)
+                else None
+            )
             return updated
 
-    async def _async_fetch_all_sources(self) -> GalleryData:
+    @callback
+    def _clear_unauthorized_images(self) -> None:
+        """Stop retries and discard cached media when access is revoked."""
+        self.data = GalleryData()
+        self._recent_assets.clear()
+        self._retry_sources.clear()
+        self._retry_at = None
+        self._next_regular_update = 0.0
+        self._retry_after = None
+        self._unschedule_refresh()
+
+    async def _async_fetch_all_sources(
+        self, sources: tuple[GallerySource, ...]
+    ) -> GalleryData:
         """Fetch new images and preserve the last good image on partial failure."""
         previous_data = self.data if self.data is not None else GalleryData()
         previous_images = dict(previous_data.images)
@@ -369,26 +459,30 @@ class ImmichGalleryCoordinator(DataUpdateCoordinator[GalleryData]):
         results = await asyncio.gather(
             *(
                 self._async_fetch_source(source, previous_images.get(source.key))
-                for source in self.sources
+                for source in sources
             ),
             return_exceptions=True,
         )
 
         images = previous_images
-        errors: dict[str, str] = {}
+        errors = dict(previous_data.errors)
         successful = 0
         retry_after: float | None = None
         transient_error: BaseException | None = None
 
-        for source, result in zip(self.sources, results, strict=True):
+        for source, result in zip(sources, results, strict=True):
             if isinstance(result, InvalidAuth):
+                self._clear_unauthorized_images()
                 raise ConfigEntryAuthFailed("Immich API key is invalid") from result
             if isinstance(result, MissingPermission):
+                self._clear_unauthorized_images()
                 raise ConfigEntryAuthFailed(
                     f"Immich API key is missing {result.permission}"
                 ) from result
             if isinstance(result, BaseException):
                 errors[source.key] = self._error_code(result)
+                if errors[source.key] not in RECOVERABLE_ERRORS:
+                    images.pop(source.key, None)
                 if isinstance(result, RateLimited):
                     retry_after = max(retry_after or 0, result.retry_after)
                     self._retry_until = self.hass.loop.time() + retry_after
@@ -401,9 +495,15 @@ class ImmichGalleryCoordinator(DataUpdateCoordinator[GalleryData]):
                 continue
 
             images[source.key] = result
+            errors.pop(source.key, None)
             successful += 1
 
-        if self.sources and successful == 0 and transient_error is not None:
+        if (
+            not previous_data.images
+            and sources
+            and successful == 0
+            and transient_error is not None
+        ):
             raise UpdateFailed(
                 "Unable to update images from Immich",
                 retry_after=retry_after,

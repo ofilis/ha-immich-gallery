@@ -17,7 +17,7 @@ from .const import (
     CONF_REPEAT_WINDOW,
     DEFAULT_AUTOMATIC_SLIDESHOW,
 )
-from .coordinator import ImmichGalleryConfigEntry
+from .coordinator import RECOVERABLE_ERRORS, ImmichGalleryConfigEntry
 
 
 async def async_get_config_entry_diagnostics(
@@ -30,8 +30,12 @@ async def async_get_config_entry_diagnostics(
     options = entry.options
     album_ids = options.get(CONF_ALBUM_IDS, [])
     available_sources = sum(
-        source.key in coordinator.data.images
-        and source.key not in coordinator.data.errors
+        coordinator.last_update_success
+        and source.key in coordinator.data.images
+        and (
+            source.key not in coordinator.data.errors
+            or coordinator.data.errors[source.key] in RECOVERABLE_ERRORS
+        )
         for source in coordinator.sources
     )
 
@@ -52,6 +56,12 @@ async def async_get_config_entry_diagnostics(
         "server_version": coordinator.server_version,
         "configured_source_count": len(coordinator.sources),
         "available_source_count": available_sources,
+        "stale_source_count": sum(
+            coordinator.last_update_success
+            and source.key in coordinator.data.images
+            and coordinator.data.errors.get(source.key) in RECOVERABLE_ERRORS
+            for source in coordinator.sources
+        ),
         "error_code_counts": dict(errors),
         "last_update_success": coordinator.last_update_success,
     }
